@@ -1,0 +1,429 @@
+Help on module modio:
+
+NAME
+    modio - Utility functions and classes to handle olimex mod-io from python.
+
+FILE
+    /opt/projects/irrigation.todo/web/irrigation/scheduled/modio/modio.py
+
+DESCRIPTION
+    SETUP
+    =====
+    
+    Before using this code, you need to make sure mod-io is configured and working
+    on your system. To do so:
+    
+    1) edit /etc/modules, by running 'sudo -s' and opening the file with your
+       favourite editor. Make sure it has the lines:
+    
+         # ... random comments ...
+         i2c-dev
+         i2c_bcm2708 baudrate=50000
+    
+    2) once /etc/modules has been edited, run:
+      
+         $ sudo service kmod start
+    
+       to load all the modules. Alternatively, you can reboot your system.
+    
+    3) make sure debugging tools and libraries are installed:
+    
+         $ sudo apt-get install i2c-tools python-smbus 
+    
+    3) verify that mod-io is accessible, and to which bus it is
+       connected. You need to run
+    
+         $ sudo i2cdetect -y X
+    
+       with X being 0 or 1. X is the bus number. If you see a 58 (assuming you did
+       not change the default address of mod-io) in the output, you found the right
+       bus. Remember this number for later!
+       
+       If you don't see 58 anywhere, do you see some other number? Did you change
+       mod-io address or firmware? Is it plugged correctly?  Is there a flashing
+       orange led? If not, you may have problems with the firmware, power supply or
+       connection of mod-io.
+    
+       Example:
+       
+       Check status of bus 0. There are all dashesh, mod-io is not here.
+    
+         $ sudos i2cdetect -y 0
+    
+                0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+           00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           70: -- -- -- -- -- -- -- --                         
+    
+       Check status of bus 1. You can see mod-io on address 58! Good!
+    
+         $ sudo i2cdetect -y 1
+    
+                0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+           00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           50: -- -- -- -- -- -- -- -- 58 -- -- -- -- -- -- -- 
+           60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+           70: -- -- -- -- -- -- -- --         
+    
+    
+    HOW TO USE THE LIBRARY
+    ======================
+    
+    1) Copy the modio.py file or the whole directory next to
+       your .py script, or somewhere in PYTHONPATH.
+    
+    2) Import it with 'import modio' or 'from modio import modio'
+       if you left the whole directory.
+    
+    3) Use it! Examples:
+    
+    from modio import modio
+    
+    # BUS Number is the bus you found during setup, see instructions above!
+    modio = modio.Device(bus=1)
+    
+    # Take control of the first relay (number 1 on board)
+    relay = modio.Relay(modio, 0)
+    
+    # Turn it on!
+    relay.CloseContact()
+    
+    # Check relay status.
+    if relay.Get():
+      print "Relay is on"
+    else:
+      print "Relay is off"
+    
+    # Turn it off!
+    relay.OpenContact()
+
+CLASSES
+    __builtin__.object
+        Device
+        FakeBus
+        Relay
+        SmbBus
+    exceptions.IOError(exceptions.EnvironmentError)
+        DeviceNotFoundException
+        SMBBusNotConfiguredProperly
+    
+    class Device(__builtin__.object)
+     |  Represents a mod-io device, allows to perform common operations.
+     |  
+     |  Methods defined here:
+     |  
+     |  CloseContactRelay(self, relay)
+     |      CloseContact a specific relay.
+     |      
+     |      Args:
+     |        relay: int, 0 - 3, the relay to enable. Note that olimex
+     |          mod-io has exactly 4 relays.
+     |      
+     |      Raises:
+     |        ValueError if an invalid relay number is passed.
+     |  
+     |  GetRelay(self, relay)
+     |      Returns the status of a relay.
+     |      
+     |      Args:
+     |        relay: int, 0 - 3, the relay to enable. Note that olimex
+     |          mod-io has exactly 4 relays.
+     |      
+     |      Raises:
+     |        ValueError if an invalid relay number is passed.
+     |      
+     |      Returns:
+     |        False if the releay is disable, True if enabled.
+     |  
+     |  GetRelays(self)
+     |      Returns the relay status as a bitmask.
+     |  
+     |  OpenContactRelay(self, relay)
+     |      OpenContact a specific relay.
+     |      
+     |      Args:
+     |        relay: int, 0 - 3, the relay to enable. Note that olimex
+     |          mod-io has exactly 4 relays.
+     |      
+     |      Raises:
+     |        ValueError if an invalid relay number is passed.
+     |  
+     |  SetRelays(self, value)
+     |      Set the relay status.
+     |  
+     |  __init__(self, address=88, bus=1, communicator=<class 'modio.SmbBus'>)
+     |      Constructs a device object.
+     |      
+     |      Args:
+     |        address: integer, mod-io address.
+     |        bus: integer, SMB bus to use to communicate with mod-io.
+     |        communicator: SmbBus or FakeBus, for testing purposes.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  DEFAULT_ADDRESS = 88
+     |  
+     |  DEFAULT_BUS = 1
+     |  
+     |  RELAYS = [1, 2, 4, 8]
+     |  
+     |  RELAY_COMMAND = 16
+    
+    class DeviceNotFoundException(exceptions.IOError)
+     |  Raised if we cannot communicate with the device.
+     |  
+     |  Method resolution order:
+     |      DeviceNotFoundException
+     |      exceptions.IOError
+     |      exceptions.EnvironmentError
+     |      exceptions.StandardError
+     |      exceptions.Exception
+     |      exceptions.BaseException
+     |      __builtin__.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.IOError:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from exceptions.IOError:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.EnvironmentError:
+     |  
+     |  __reduce__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.EnvironmentError:
+     |  
+     |  errno
+     |      exception errno
+     |  
+     |  filename
+     |      exception filename
+     |  
+     |  strerror
+     |      exception strerror
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __getitem__(...)
+     |      x.__getitem__(y) <==> x[y]
+     |  
+     |  __getslice__(...)
+     |      x.__getslice__(i, j) <==> x[i:j]
+     |      
+     |      Use of negative indices is not supported.
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __unicode__(...)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.BaseException:
+     |  
+     |  __dict__
+     |  
+     |  args
+     |  
+     |  message
+    
+    class FakeBus(__builtin__.object)
+     |  Emulates a SmbBus for testing purposes.
+     |  
+     |  Methods defined here:
+     |  
+     |  Write(self, key, value)
+     |  
+     |  __init__(self, bus, address)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Relay(__builtin__.object)
+     |  Represents a single relay, convenience wrapper around the device class.
+     |  
+     |  Methods defined here:
+     |  
+     |  CloseContact(self)
+     |      Enables this relay, by closing the contact.
+     |  
+     |  Get(self)
+     |      Get status of this relay.
+     |  
+     |  OpenContact(self)
+     |      Disables this relay, by opening the contact.
+     |  
+     |  __init__(self, device, number)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class SMBBusNotConfiguredProperly(exceptions.IOError)
+     |  Raised if we can't find the propber smbbus setup.
+     |  
+     |  Method resolution order:
+     |      SMBBusNotConfiguredProperly
+     |      exceptions.IOError
+     |      exceptions.EnvironmentError
+     |      exceptions.StandardError
+     |      exceptions.Exception
+     |      exceptions.BaseException
+     |      __builtin__.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.IOError:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see help(type(x)) for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from exceptions.IOError:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.EnvironmentError:
+     |  
+     |  __reduce__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.EnvironmentError:
+     |  
+     |  errno
+     |      exception errno
+     |  
+     |  filename
+     |      exception filename
+     |  
+     |  strerror
+     |      exception strerror
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __getitem__(...)
+     |      x.__getitem__(y) <==> x[y]
+     |  
+     |  __getslice__(...)
+     |      x.__getslice__(i, j) <==> x[i:j]
+     |      
+     |      Use of negative indices is not supported.
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __unicode__(...)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.BaseException:
+     |  
+     |  __dict__
+     |  
+     |  args
+     |  
+     |  message
+    
+    class SmbBus(__builtin__.object)
+     |  Represent an SMB bus to read / write from modio.
+     |  
+     |  Methods defined here:
+     |  
+     |  Write(self, key, value)
+     |      Sends a request to olimex mod-io.
+     |  
+     |  __init__(self, bus, address)
+     |      Instantiates a SmbBus.
+     |      
+     |      Args:
+     |        bus: integer, bus number, generally 0 or 1.
+     |        address: integer, generally 0x58, the address where
+     |          mod-io can be found.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+
+
