@@ -1,4 +1,104 @@
-"""Utility functions to handle olimex mod-io from python."""
+"""Utility functions and classes to handle olimex mod-io from python.
+
+SETUP
+=====
+
+Before using this code, you need to make sure mod-io is configured and working
+on your system. To do so:
+
+1) edit /etc/modules, by running 'sudo -s' and opening the file with your
+   favourite editor. Make sure it has the lines:
+
+     # ... random comments ...
+     i2c-dev
+     i2c_bcm2708 baudrate=50000
+
+2) once /etc/modules has been edited, run:
+  
+     $ sudo service kmod start
+
+   to load all the modules. Alternatively, you can reboot your system.
+
+3) make sure debugging tools and libraries are installed:
+
+     $ sudo apt-get install i2c-tools python-smbus 
+
+3) verify that mod-io is accessible, and to which bus it is
+   connected. You need to run
+
+     $ sudo i2cdetect -y X
+
+   with X being 0 or 1. X is the bus number. If you see a 58 (assuming you did
+   not change the default address of mod-io) in the output, you found the right
+   bus. Remember this number for later!
+   
+   If you don't see 58 anywhere, do you see some other number? Did you change
+   mod-io address or firmware? Is it plugged correctly?  Is there a flashing
+   orange led? If not, you may have problems with the firmware, power supply or
+   connection of mod-io.
+
+   Example:
+   
+   Check status of bus 0. There are all dashesh, mod-io is not here.
+
+     $ sudos i2cdetect -y 0
+
+            0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+       00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       70: -- -- -- -- -- -- -- --                         
+
+   Check status of bus 1. You can see mod-io on address 58! Good!
+
+     $ sudo i2cdetect -y 1
+
+            0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+       00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       50: -- -- -- -- -- -- -- -- 58 -- -- -- -- -- -- -- 
+       60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+       70: -- -- -- -- -- -- -- --         
+
+
+HOW TO USE THE LIBRARY
+======================
+
+1) Copy the modio.py file or the whole directory next to
+   your .py script, or somewhere in PYTHONPATH.
+
+2) Import it with 'import modio' or 'from modio import modio'
+   if you left the whole directory.
+
+3) Use it! Examples:
+
+from modio import modio
+
+# BUS Number is the bus you found during setup, see instructions above!
+modio = modio.Device(bus=1)
+
+# Take control of the first relay (number 1 on board)
+relay = modio.Relay(modio, 0)
+
+# Turn it on!
+relay.CloseContact()
+
+# Check relay status.
+if relay.Get():
+  print "Relay is on"
+else:
+  print "Relay is off"
+
+# Turn it off!
+relay.OpenContact()
+"""
 
 import smbus
 import logging
