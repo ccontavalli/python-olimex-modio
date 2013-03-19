@@ -41,7 +41,7 @@ on your system. To do so:
    
    Check status of bus 0. There are all dashesh, mod-io is not here.
 
-     $ sudos i2cdetect -y 0
+     $ sudo i2cdetect -y 0
 
             0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
        00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
