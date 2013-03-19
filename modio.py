@@ -82,10 +82,10 @@ HOW TO USE THE LIBRARY
 from modio import modio
 
 # BUS Number is the bus you found during setup, see instructions above!
-modio = modio.Device(bus=1)
+board = modio.Device(bus=1)
 
 # Take control of the first relay (number 1 on board)
-relay = modio.Relay(modio, 0)
+relay = modio.Relay(board, 0)
 
 # Turn it on!
 relay.CloseContact()
