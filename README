@@ -98,7 +98,7 @@ DESCRIPTION
     relay.CloseContact()
     
     # Check relay status.
-    if relay.Get():
+    if relay.IsClosed():
       print "Relay is on"
     else:
       print "Relay is off"
@@ -131,7 +131,10 @@ CLASSES
      |      Raises:
      |        ValueError if an invalid relay number is passed.
      |  
-     |  GetRelay(self, relay)
+     |  GetRelays(self)
+     |      Returns the relay status as a bitmask.
+     |  
+     |  IsRelayClosed(self, relay)
      |      Returns the status of a relay.
      |      
      |      Args:
@@ -142,10 +145,7 @@ CLASSES
      |        ValueError if an invalid relay number is passed.
      |      
      |      Returns:
-     |        False if the releay is disable, True if enabled.
-     |  
-     |  GetRelays(self)
-     |      Returns the relay status as a bitmask.
+     |        False if the releay is opened, True if closed.
      |  
      |  OpenContactRelay(self, relay)
      |      OpenContact a specific relay.
@@ -158,7 +158,7 @@ CLASSES
      |        ValueError if an invalid relay number is passed.
      |  
      |  SetRelays(self, value)
-     |      Set the relay status.
+     |      Set and return the relay status.
      |  
      |  __init__(self, address=88, bus=1, communicator=<class 'modio.SmbBus'>)
      |      Constructs a device object.
@@ -300,6 +300,9 @@ CLASSES
      |      Enables this relay, by closing the contact.
      |  
      |  Get(self)
+     |      Deprecated, use IsClosed instead.
+     |  
+     |  IsClosed(self)
      |      Get status of this relay.
      |  
      |  OpenContact(self)

@@ -91,7 +91,7 @@ relay = modio.Relay(board, 0)
 relay.CloseContact()
 
 # Check relay status.
-if relay.Get():
+if relay.IsClosed():
   print "Relay is on"
 else:
   print "Relay is off"
@@ -181,13 +181,14 @@ class Device(object):
     return self.relay_status
 
   def SetRelays(self, value):
-    """Set the relay status."""
+    """Set and return the relay status."""
     if value < 0 or value > 0xf:
       raise ValueError("Invalid relay value: can be between 0 and 0xF")
     self.communicator.Write(self.RELAY_COMMAND, value)
     self.relay_status = value
+    return self.relay_status
 
-  def GetRelay(self, relay):
+  def IsRelayClosed(self, relay):
     """Returns the status of a relay.
 
     Args:
@@ -198,7 +199,7 @@ class Device(object):
       ValueError if an invalid relay number is passed.
 
     Returns:
-      False if the releay is disable, True if enabled.
+      False if the releay is opened, True if closed.
     """
     try:
       relay = self.RELAYS[relay]
@@ -247,9 +248,13 @@ class Relay(object):
     self.device = device
     self.number = number
 
-  def Get(self):
+  def IsClosed(self):
     """Get status of this relay."""
-    self.device.GetRelay(self.number)
+    return self.device.IsRelayClosed(self.number)
+
+  def Get(self):
+    """Deprecated, use IsClosed instead."""
+    return self.IsClosed()
 
   def OpenContact(self):
     """Disables this relay, by opening the contact."""
