@@ -21,20 +21,23 @@ class ModioTest(unittest.TestCase):
 
   def testInvalidRelayDetected(self):
     board = modio.Device(communicator=modio.FakeBus)
-    self.assertRaises(ValueError, board.IsRelayClosed, 4)
+    self.assertRaises(ValueError, board.IsRelayClosed, 0)
+    self.assertRaises(ValueError, board.IsRelayClosed, 5)
     self.assertRaises(ValueError, board.IsRelayClosed, -1)
     self.assertRaises(ValueError, board.IsRelayClosed, -5)
-    self.assertRaises(ValueError, board.CloseContactRelay, 4)
+    self.assertRaises(ValueError, board.CloseContactRelay, 0)
+    self.assertRaises(ValueError, board.CloseContactRelay, 5)
     self.assertRaises(ValueError, board.CloseContactRelay, -1)
     self.assertRaises(ValueError, board.CloseContactRelay, -5)
-    self.assertRaises(ValueError, board.OpenContactRelay, 4)
+    self.assertRaises(ValueError, board.OpenContactRelay, 0)
+    self.assertRaises(ValueError, board.OpenContactRelay, 5)
     self.assertRaises(ValueError, board.OpenContactRelay, -5)
     self.assertRaises(ValueError, board.OpenContactRelay, -1)
 
   def testOpenCloseOneRelay(self):
     board = modio.Device(communicator=modio.FakeBus)
     self.assertEquals(0, board.GetRelays())
-    for i in xrange(0, 3):
+    for i in xrange(1, 5):
       self.assertEquals(False, board.IsRelayClosed(i))
       board.CloseContactRelay(i)
       self.assertEquals(True, board.IsRelayClosed(i))
@@ -45,12 +48,12 @@ class ModioTest(unittest.TestCase):
     board = modio.Device(communicator=modio.FakeBus)
     self.assertEquals(0, board.GetRelays())
     # Close one relay at a time.
-    for i in xrange(0, 4):
+    for i in xrange(1, 5):
       # Verify that all relays we closed before are still closed.
-      for j in xrange(i - 1, 0, -1):
+      for j in xrange(i - 1, 1, -1):
         self.assertEquals(True, board.IsRelayClosed(j))
       # While the rest are still opened.
-      for j in xrange(i, 4):
+      for j in xrange(i, 5):
         self.assertEquals(False, board.IsRelayClosed(j))
 
       # Check that closing relay has desired effect.
@@ -59,12 +62,12 @@ class ModioTest(unittest.TestCase):
 
     # Now that they are all closed, open one relay at a time.
     self.assertEquals(0xf, board.GetRelays())
-    for i in xrange(0, 4):
+    for i in xrange(1, 5):
       # Verify that all relays we opened before are still opened.
-      for j in xrange(i - 1, 0, -1):
+      for j in xrange(i - 1, 1, -1):
         self.assertEquals(False, board.IsRelayClosed(j))
       # While the rest are still closed.
-      for j in xrange(i, 4):
+      for j in xrange(i, 5):
         self.assertEquals(True, board.IsRelayClosed(j))
 
       # Check that opening relay has desired effect.

@@ -85,7 +85,7 @@ from modio import modio
 board = modio.Device(bus=1)
 
 # Take control of the first relay (number 1 on board)
-relay = modio.Relay(board, 0)
+relay = modio.Relay(board, 1)
 
 # Turn it on!
 relay.CloseContact()
@@ -162,9 +162,6 @@ class Device(object):
   # Command to use to pilot relays.
   RELAY_COMMAND = 0x10
 
-  # Bit value to use to enable/disable each relay.
-  RELAYS = [1<<0, 1<<1, 1<<2, 1<<3]
-
   def __init__(self, address=DEFAULT_ADDRESS, bus=DEFAULT_BUS, communicator=SmbBus):
     """Constructs a device object.
 
@@ -191,8 +188,11 @@ class Device(object):
   def GetRelayBit(self, relay):
     """Returns the bit that represents the status of the specified relay.
 
+    The status of the relays is represented as a bit mask that can be
+    written to mod-io to change the status of the relay (0 open, 1 closed).
+
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to . Note that olimex
         mod-io has exactly 4 relays.
 
     Returns:
@@ -202,16 +202,15 @@ class Device(object):
     Raises:
       ValueError, if the relay number is invalid.
     """
-    if relay < 0 or relay >= len(self.RELAYS):
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
-    return self.RELAYS[relay]
+    if relay < 1 or relay > 4:
+      raise ValueError("Invalid relay: must be between 1 and %d", 4)
+    return 1 << (relay - 1)
 
   def IsRelayClosed(self, relay):
     """Returns the status of a relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
@@ -229,7 +228,7 @@ class Device(object):
     """CloseContact a specific relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
@@ -241,7 +240,7 @@ class Device(object):
     """OpenContact a specific relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
