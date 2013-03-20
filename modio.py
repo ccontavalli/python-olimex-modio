@@ -4,7 +4,8 @@ SETUP
 =====
 
 Before using this code, you need to make sure mod-io is configured and working
-on your system. To do so:
+on your system. Assuming you have a debian based system (like ubuntu or
+raspbian):
 
 1) edit /etc/modules, by running 'sudo -s' and opening the file with your
    favourite editor. Make sure it has the lines:
@@ -79,25 +80,38 @@ HOW TO USE THE LIBRARY
 
 3) Use it! Examples:
 
-from modio import modio
+    from modio import modio
+    
+    # BUS Number is the bus you found during setup, see instructions above!
+    board = modio.Device(bus=1)
+    
+    # Take control of the first relay (number 1 on board)
+    relay = modio.Relay(board, 1)
+    
+    # Turn it on!
+    relay.CloseContact()
+    
+    # Check relay status.
+    if relay.IsClosed():
+      print "Relay is on"
+    else:
+      print "Relay is off"
+    
+    # Turn it off!
+    relay.OpenContact()
 
-# BUS Number is the bus you found during setup, see instructions above!
-board = modio.Device(bus=1)
 
-# Take control of the first relay (number 1 on board)
-relay = modio.Relay(board, 1)
+PROBLEMS, ISSUES, or QUESTIONS?
+===============================
 
-# Turn it on!
-relay.CloseContact()
+Check out the wiki here:
+  https://github.com/ccontavalli/python-olimex-modio/wiki
 
-# Check relay status.
-if relay.IsClosed():
-  print "Relay is on"
-else:
-  print "Relay is off"
+File problems, issues or other requests here:
+  https://github.com/ccontavalli/python-olimex-modio/issues
 
-# Turn it off!
-relay.OpenContact()
+Newer versions of the code are available here:
+  https://github.com/ccontavalli/python-olimex-modio
 """
 
 import smbus
