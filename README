@@ -123,6 +123,7 @@ DESCRIPTION
 CLASSES
     __builtin__.object
         Device
+        DigitalIn
         FakeBus
         Relay
         SmbBus
@@ -135,6 +136,16 @@ CLASSES
      |  
      |  Methods defined here:
      |  
+     |  ChangeAddress(self, new_address)
+     |      Changes the address of modio.
+     |      
+     |      Args:
+     |        new_address: int, 0 - 0xff, the new address to be assigned
+     |          to modio.
+     |      
+     |      Raises:
+     |        ValueError, if the new_address is invalid.
+     |  
      |  CloseContactRelay(self, relay)
      |      CloseContact a specific relay.
      |      
@@ -144,6 +155,22 @@ CLASSES
      |      
      |      Raises:
      |        ValueError if an invalid relay number is passed.
+     |  
+     |  GetDigitalIn(self, digital_in)
+     |      Return value for digital in.
+     |      
+     |      Args:
+     |        digital_in: int, 0 - 3, the digital in value to get for. Note that olimex
+     |          mod-io has exactly 4 digital ins.
+     |      
+     |      Raises:
+     |        ValueError if an invalid digital in number is passed.
+     |      
+     |      Returns:
+     |        False if the digital in is low, True if high.
+     |  
+     |  GetDigitalIns(self)
+     |      Reads the values of digital in register.
      |  
      |  GetRelayBit(self, relay)
      |      Returns the bit that represents the status of the specified relay.
@@ -218,9 +245,13 @@ CLASSES
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
      |  
+     |  CHANGE_ADDRESS_COMMAND = 240
+     |  
      |  DEFAULT_ADDRESS = 88
      |  
      |  DEFAULT_BUS = 1
+     |  
+     |  DIGITAL_IN_COMMAND = 32
      |  
      |  RELAY_COMMAND = 16
     
@@ -308,6 +339,25 @@ CLASSES
      |  args
      |  
      |  message
+    
+    class DigitalIn(__builtin__.object)
+     |  Represents a single digital in, convenience wrapper around the device class.
+     |  
+     |  Methods defined here:
+     |  
+     |  Get(self)
+     |      Get status of this digital in.
+     |  
+     |  __init__(self, device, number)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
     
     class FakeBus(__builtin__.object)
      |  Emulates a SmbBus for testing purposes.
@@ -452,6 +502,9 @@ CLASSES
      |  Represent an SMB bus to read / write from modio.
      |  
      |  Methods defined here:
+     |  
+     |  ReadBlock(self, key, value)
+     |      Reads a block from olimex mod-io.
      |  
      |  Write(self, key, value)
      |      Sends a request to olimex mod-io.
