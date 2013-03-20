@@ -4,7 +4,7 @@ NAME
     modio - Utility functions and classes to handle olimex mod-io from python.
 
 FILE
-    /opt/projects/irrigation.todo/web/irrigation/scheduled/modio/modio.py
+    modio.py
 
 DESCRIPTION
     SETUP
