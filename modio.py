@@ -136,6 +136,12 @@ class SmbBus(object):
     except IOError:
       raise DeviceNotFoundException("Could not communicate with device")
 
+  def ReadBlock(self, key, value):
+    """Reads a block from olimex mod-io."""
+    try:
+      return self.smb.read_i2c_block_data(self.address, key, value)
+    except IOError:
+      raise DeviceNotFoundException("Could not communicate with device")
 
 class FakeBus(object):
   """Emulates a SmbBus for testing purposes."""
@@ -161,6 +167,12 @@ class Device(object):
 
   # Command to use to pilot relays.
   RELAY_COMMAND = 0x10
+  
+  # Command to read digital in status
+  DIGITAL_IN_COMMAND = 0x20
+  
+  # Command to change the address of modio
+  CHANGE_ADDRESS_COMMAND = 0xF0
 
   # Bit value to use to enable/disable each relay.
   RELAYS = [1<<0, 1<<1, 1<<2, 1<<3]
@@ -175,6 +187,44 @@ class Device(object):
     """
     self.communicator = communicator(bus, address)
     self.SetRelays(0)
+
+  def ChangeAddress(self,new_address):
+     """changes the address of modio
+     Args:
+       new_address: the new address to be assigned to modio
+     """
+     if new_address < 0 or new_address > 0xfF:
+       raise ValueError("Invalid address: can be between 0 and 0xFF")
+     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
+     
+  def GetDigitalIns(self):
+     """ Reads the values of digital in register """
+     buffer = self.communicator.ReadBlock(self.DIGITAL_IN_COMMAND,2)
+     data = [0x00]*2
+     for i in range(len(buffer)):
+        data[i] = buffer[i]     
+     self.digital_ins = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]     
+     
+  def GetDigitalIn(self,digital_in):
+     """ Return value for digital in
+       Args:
+         digital_in: int, 0 - 3, the digital in value to get for. Note that olimex
+           mod-io has exactly 4 digital ins.
+   
+       Raises:
+         ValueError if an invalid digital in number is passed.
+   
+       Returns:
+         False if the digital in is low, True if high.
+     """
+     
+     self.GetDigitalIns()
+     try:
+        digital_in = self.digital_ins[digital_in]
+     except IndexError:
+        raise ValueError(
+          "Invalid digital in: must be between 0 and %d", len(self.digital_ins) - 1)
+     return digital_in != 0
 
   def GetRelays(self):
     """Returns the relay status as a bitmask."""
@@ -240,6 +290,16 @@ class Device(object):
     except IndexError:
       raise ValueError(
           "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+
+class DigitalIn(object):
+  """Represents a single digital in, convenience wrapper around the device class."""
+  def __init__(self, device, number):
+    self.device = device
+    self.number = number
+
+  def Get(self):
+    """Get status of this digital in."""
+    return self.device.GetDigitalIn(self.number)
 
 class Relay(object):
   """Represents a single relay, convenience wrapper around the device class."""
