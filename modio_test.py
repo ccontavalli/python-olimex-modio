@@ -22,11 +22,14 @@ class ModioTest(unittest.TestCase):
   def testInvalidRelayDetected(self):
     board = modio.Device(communicator=modio.FakeBus)
     self.assertRaises(ValueError, board.IsRelayClosed, 4)
+    self.assertRaises(ValueError, board.IsRelayClosed, -1)
     self.assertRaises(ValueError, board.IsRelayClosed, -5)
     self.assertRaises(ValueError, board.CloseContactRelay, 4)
+    self.assertRaises(ValueError, board.CloseContactRelay, -1)
     self.assertRaises(ValueError, board.CloseContactRelay, -5)
     self.assertRaises(ValueError, board.OpenContactRelay, 4)
     self.assertRaises(ValueError, board.OpenContactRelay, -5)
+    self.assertRaises(ValueError, board.OpenContactRelay, -1)
 
   def testOpenCloseOneRelay(self):
     board = modio.Device(communicator=modio.FakeBus)

@@ -188,6 +188,25 @@ class Device(object):
     self.relay_status = value
     return self.relay_status
 
+  def GetRelayBit(self, relay):
+    """Returns the bit that represents the status of the specified relay.
+
+    Args:
+      relay: int, 0 - 3, the relay to enable. Note that olimex
+        mod-io has exactly 4 relays.
+
+    Returns:
+      int, the bit of the relay. For relay 0, 1, for relay 1, 2, and
+      so on. Mostly useful as this function validates the number.
+
+    Raises:
+      ValueError, if the relay number is invalid.
+    """
+    if relay < 0 or relay >= len(self.RELAYS):
+      raise ValueError(
+          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    return self.RELAYS[relay]
+
   def IsRelayClosed(self, relay):
     """Returns the status of a relay.
 
@@ -201,11 +220,7 @@ class Device(object):
     Returns:
       False if the releay is opened, True if closed.
     """
-    try:
-      relay = self.RELAYS[relay]
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    relay = self.GetRelayBit(relay)
     if self.relay_status & relay:
       return True
     return False
@@ -220,11 +235,7 @@ class Device(object):
     Raises:
       ValueError if an invalid relay number is passed.
     """
-    try:
-      self.SetRelays(self.GetRelays() | self.RELAYS[relay])
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    self.SetRelays(self.GetRelays() | self.GetRelayBit(relay))
 
   def OpenContactRelay(self, relay):
     """OpenContact a specific relay.
@@ -236,11 +247,7 @@ class Device(object):
     Raises:
       ValueError if an invalid relay number is passed.
     """
-    try:
-      self.SetRelays(self.GetRelays() & ((~self.RELAYS[relay]) & 0xf))
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    self.SetRelays(self.GetRelays() & ((~self.GetRelayBit(relay)) & 0xf))
 
 class Relay(object):
   """Represents a single relay, convenience wrapper around the device class."""
