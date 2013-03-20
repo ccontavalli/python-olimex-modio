@@ -74,5 +74,11 @@ class ModioTest(unittest.TestCase):
       board.OpenContactRelay(i)
       self.assertEquals(False, board.IsRelayClosed(i))
 
+  def testSingleRelayValidation(self):
+    board = modio.Device(communicator=modio.FakeBus)
+    self.assertRaises(ValueError, modio.Relay, board, -1)
+    self.assertRaises(ValueError, modio.Relay, board, 0)
+    self.assertRaises(ValueError, modio.Relay, board, 5)
+
 if __name__ == '__main__':
   unittest.main()

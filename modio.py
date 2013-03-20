@@ -202,8 +202,15 @@ class Device(object):
   def GetRelayBit(self, relay):
     """Returns the bit that represents the status of the specified relay.
 
-    The status of the relays is represented as a bit mask that can be
-    written to mod-io to change the status of the relay (0 open, 1 closed).
+    With mod-io, the status of all the relays on the board is represented
+    as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
+    representis a closed relay. This value can be written to mod-io to close
+    / open all relays.
+
+    This method takes a relay number (eg, 1 - 4) and returns an integer
+    with the bit controlling this relay set to 1. As this method raises
+    ValueError if an invalid relay is provided, it can be used to validate
+    relay numbers.
 
     Args:
       relay: int, 1 - 4, the relay to . Note that olimex
@@ -265,11 +272,23 @@ class Device(object):
 class Relay(object):
   """Represents a single relay, convenience wrapper around the device class."""
   def __init__(self, device, number):
+    """Creates a new Relay instance.
+
+    Args:
+      device: a Device instance, something like modio.Device().
+      number: int, the number of the relay to control, from 1 to 4.
+
+    Raises:
+      ValueError, if the number is invalid.
+    """
+    # Used to check that the relay number is valid, before any operation
+    # is actually performed.
+    device.GetRelayBit(number)
     self.device = device
     self.number = number
 
   def IsClosed(self):
-    """Get status of this relay."""
+    """Returns true if this relay is closed, false otherwise."""
     return self.device.IsRelayClosed(self.number)
 
   def Get(self):
