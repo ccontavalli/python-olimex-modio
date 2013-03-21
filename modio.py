@@ -125,8 +125,11 @@ class SMBBusNotConfiguredProperly(IOError):
 
 
 class SmbBus(object):
-  """Represent an SMB bus to read / write from modio."""
+  """Represent an SMB bus to read / write from modio.
 
+  Attributes:
+    address: integer, the address where mod-io can be found.
+  """
   def __init__(self, bus, address):
     """Instantiates a SmbBus.
 
@@ -158,8 +161,11 @@ class SmbBus(object):
       raise DeviceNotFoundException("Could not communicate with device")
 
 class FakeBus(object):
-  """Emulates a SmbBus for testing purposes."""
+  """Emulates a SmbBus for testing purposes.
 
+  Attributes:
+    address: integer, the address where mod-io can be found.
+  """
   def __init__(self, bus, address):
     logging.warning("using fake SMB bus instead of real one")
 
@@ -212,6 +218,7 @@ class Device(object):
     if new_address < 0 or new_address > 0xfF:
       raise ValueError("Invalid address: can be between 0 and 0xFF")
     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
+    self.communicator.address = new_address
      
   def GetDigitalIns(self):
     """Reads the values of digital in register."""
