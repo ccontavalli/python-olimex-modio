@@ -362,6 +362,9 @@ CLASSES
     class FakeBus(__builtin__.object)
      |  Emulates a SmbBus for testing purposes.
      |  
+     |  Attributes:
+     |    address: integer, the address where mod-io can be found.
+     |  
      |  Methods defined here:
      |  
      |  Write(self, key, value)
@@ -500,6 +503,9 @@ CLASSES
     
     class SmbBus(__builtin__.object)
      |  Represent an SMB bus to read / write from modio.
+     |  
+     |  Attributes:
+     |    address: integer, the address where mod-io can be found.
      |  
      |  Methods defined here:
      |  
