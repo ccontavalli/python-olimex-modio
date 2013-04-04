@@ -4,7 +4,8 @@ SETUP
 =====
 
 Before using this code, you need to make sure mod-io is configured and working
-on your system. To do so:
+on your system. Assuming you have a debian based system (like ubuntu or
+raspbian):
 
 1) edit /etc/modules, by running 'sudo -s' and opening the file with your
    favourite editor. Make sure it has the lines:
@@ -41,7 +42,7 @@ on your system. To do so:
    
    Check status of bus 0. There are all dashesh, mod-io is not here.
 
-     $ sudos i2cdetect -y 0
+     $ sudo i2cdetect -y 0
 
             0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
        00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -79,25 +80,38 @@ HOW TO USE THE LIBRARY
 
 3) Use it! Examples:
 
-from modio import modio
+    from modio import modio
+    
+    # BUS Number is the bus you found during setup, see instructions above!
+    board = modio.Device(bus=1)
+    
+    # Take control of the first relay (number 1 on board)
+    relay = modio.Relay(board, 1)
+    
+    # Turn it on!
+    relay.CloseContact()
+    
+    # Check relay status.
+    if relay.IsClosed():
+      print "Relay is on"
+    else:
+      print "Relay is off"
+    
+    # Turn it off!
+    relay.OpenContact()
 
-# BUS Number is the bus you found during setup, see instructions above!
-modio = modio.Device(bus=1)
 
-# Take control of the first relay (number 1 on board)
-relay = modio.Relay(modio, 0)
+PROBLEMS, ISSUES, or QUESTIONS?
+===============================
 
-# Turn it on!
-relay.CloseContact()
+Check out the wiki here:
+  https://github.com/ccontavalli/python-olimex-modio/wiki
 
-# Check relay status.
-if relay.Get():
-  print "Relay is on"
-else:
-  print "Relay is off"
+File problems, issues or other requests here:
+  https://github.com/ccontavalli/python-olimex-modio/issues
 
-# Turn it off!
-relay.OpenContact()
+Newer versions of the code are available here:
+  https://github.com/ccontavalli/python-olimex-modio
 """
 
 import smbus
@@ -111,8 +125,11 @@ class SMBBusNotConfiguredProperly(IOError):
 
 
 class SmbBus(object):
-  """Represent an SMB bus to read / write from modio."""
+  """Represent an SMB bus to read / write from modio.
 
+  Attributes:
+    address: integer, the address where mod-io can be found.
+  """
   def __init__(self, bus, address):
     """Instantiates a SmbBus.
 
@@ -144,8 +161,11 @@ class SmbBus(object):
       raise DeviceNotFoundException("Could not communicate with device")
 
 class FakeBus(object):
-  """Emulates a SmbBus for testing purposes."""
+  """Emulates a SmbBus for testing purposes.
 
+  Attributes:
+    address: integer, the address where mod-io can be found.
+  """
   def __init__(self, bus, address):
     logging.warning("using fake SMB bus instead of real one")
 
@@ -171,11 +191,11 @@ class Device(object):
   # Command to read digital in status
   DIGITAL_IN_COMMAND = 0x20
   
+  # Command to get relay state
+  RELAY_READ_COMMAND = 0x40
+  
   # Command to change the address of modio
   CHANGE_ADDRESS_COMMAND = 0xF0
-
-  # Bit value to use to enable/disable each relay.
-  RELAYS = [1<<0, 1<<1, 1<<2, 1<<3]
 
   def __init__(self, address=DEFAULT_ADDRESS, bus=DEFAULT_BUS, communicator=SmbBus):
     """Constructs a device object.
@@ -188,108 +208,157 @@ class Device(object):
     self.communicator = communicator(bus, address)
     self.SetRelays(0)
 
-  def ChangeAddress(self,new_address):
-     """changes the address of modio
-     Args:
-       new_address: the new address to be assigned to modio
-     """
-     if new_address < 0 or new_address > 0xfF:
-       raise ValueError("Invalid address: can be between 0 and 0xFF")
-     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
+  def ChangeAddress(self, new_address):
+    """Changes the address of modio.
+
+    Args:
+      new_address: int, 0 - 0xff, the new address to be assigned
+        to modio.
+    
+    Raises:
+      ValueError, if the new_address is invalid.
+    """
+    if new_address < 0 or new_address > 0xfF:
+      raise ValueError("Invalid address: can be between 0 and 0xFF")
+    self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
+    self.communicator.address = new_address
      
+  def GetRelayOuts(self):
+    """Reads the values of relay in register."""
+    buffer = self.communicator.ReadBlock(self.RELAY_READ_COMMAND, 2)
+    data = [0x00]*2
+    for i in range(len(buffer)):
+      data[i] = buffer[i]      
+    self.relay_outs = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]
+  
+  def GetRelayOut(self,relay_out):
+    """Return value for relay 
+
+    Args:
+      relay_out: int, 0 - 3, the relay value to get for. Note that olimex
+        mod-io has exactly 4 relays
+   
+    Raises:
+      ValueError if an invalid relay number is passed.
+   
+    Returns:
+      False if the relay is low, True if high.
+    """
+    self.GetRelayOuts()
+    try:      
+      relay_out = self.relay_outs[relay_out-1]
+    except IndexError:
+      raise ValueError(
+        "Invalid digital in: must be between 0 and %d", len(self.relay_out) - 1)
+    return relay_out != 0
+    
   def GetDigitalIns(self):
-     """ Reads the values of digital in register """
-     buffer = self.communicator.ReadBlock(self.DIGITAL_IN_COMMAND,2)
-     data = [0x00]*2
-     for i in range(len(buffer)):
-        data[i] = buffer[i]     
-     self.digital_ins = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]     
+    """Reads the values of digital in register."""
+    buffer = self.communicator.ReadBlock(self.DIGITAL_IN_COMMAND, 2)
+    data = [0x00]*2
+    for i in range(len(buffer)):
+      data[i] = buffer[i]     
+    self.digital_ins = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]     
      
   def GetDigitalIn(self,digital_in):
-     """ Return value for digital in
-       Args:
-         digital_in: int, 0 - 3, the digital in value to get for. Note that olimex
-           mod-io has exactly 4 digital ins.
+    """Return value for digital in.
+
+    Args:
+      digital_in: int, 0 - 3, the digital in value to get for. Note that olimex
+        mod-io has exactly 4 digital ins.
    
-       Raises:
-         ValueError if an invalid digital in number is passed.
+    Raises:
+      ValueError if an invalid digital in number is passed.
    
-       Returns:
-         False if the digital in is low, True if high.
-     """
-     
-     self.GetDigitalIns()
-     try:
-        digital_in = self.digital_ins[digital_in]
-     except IndexError:
-        raise ValueError(
-          "Invalid digital in: must be between 0 and %d", len(self.digital_ins) - 1)
-     return digital_in != 0
+    Returns:
+      False if the digital in is low, True if high.
+    """
+    self.GetDigitalIns()
+    try:
+      digital_in = self.digital_ins[digital_in]
+    except IndexError:
+      raise ValueError(
+        "Invalid digital in: must be between 0 and %d", len(self.digital_ins) - 1)
+    return digital_in != 0
 
   def GetRelays(self):
     """Returns the relay status as a bitmask."""
     return self.relay_status
 
   def SetRelays(self, value):
-    """Set the relay status."""
+    """Set and return the relay status."""
     if value < 0 or value > 0xf:
       raise ValueError("Invalid relay value: can be between 0 and 0xF")
     self.communicator.Write(self.RELAY_COMMAND, value)
     self.relay_status = value
+    return self.relay_status
 
-  def GetRelay(self, relay):
+  def GetRelayBit(self, relay):
+    """Returns the bit that represents the status of the specified relay.
+
+    With mod-io, the status of all the relays on the board is represented
+    as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
+    representis a closed relay. This value can be written to mod-io to close
+    / open all relays.
+
+    This method takes a relay number (eg, 1 - 4) and returns an integer
+    with the bit controlling this relay set to 1. As this method raises
+    ValueError if an invalid relay is provided, it can be used to validate
+    relay numbers.
+
+    Args:
+      relay: int, 1 - 4, the relay to . Note that olimex
+        mod-io has exactly 4 relays.
+
+    Returns:
+      int, the bit of the relay. For relay 0, 1, for relay 1, 2, and
+      so on. Mostly useful as this function validates the number.
+
+    Raises:
+      ValueError, if the relay number is invalid.
+    """
+    if relay < 1 or relay > 4:
+      raise ValueError("Invalid relay: must be between 1 and %d", 4)
+    return 1 << (relay - 1)
+
+  def IsRelayClosed(self, relay):
     """Returns the status of a relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
       ValueError if an invalid relay number is passed.
 
     Returns:
-      False if the releay is disable, True if enabled.
+      False if the releay is opened, True if closed.
     """
-    try:
-      relay = self.RELAYS[relay]
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
-    if self.relay_status & relay:
-      return True
-    return False
+    return self.GetRelayOut(relay)
 
   def CloseContactRelay(self, relay):
     """CloseContact a specific relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
       ValueError if an invalid relay number is passed.
     """
-    try:
-      self.SetRelays(self.GetRelays() | self.RELAYS[relay])
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    self.SetRelays(self.GetRelays() | self.GetRelayBit(relay))
 
   def OpenContactRelay(self, relay):
     """OpenContact a specific relay.
 
     Args:
-      relay: int, 0 - 3, the relay to enable. Note that olimex
+      relay: int, 1 - 4, the relay to enable. Note that olimex
         mod-io has exactly 4 relays.
 
     Raises:
       ValueError if an invalid relay number is passed.
     """
-    try:
-      self.SetRelays(self.GetRelays() & ((~self.RELAYS[relay]) & 0xf))
-    except IndexError:
-      raise ValueError(
-          "Invalid relay: must be between 0 and %d", len(self.RELAYS) - 1)
+    self.SetRelays(self.GetRelays() & ((~self.GetRelayBit(relay)) & 0xf))
 
 class DigitalIn(object):
   """Represents a single digital in, convenience wrapper around the device class."""
@@ -304,12 +373,28 @@ class DigitalIn(object):
 class Relay(object):
   """Represents a single relay, convenience wrapper around the device class."""
   def __init__(self, device, number):
+    """Creates a new Relay instance.
+
+    Args:
+      device: a Device instance, something like modio.Device().
+      number: int, the number of the relay to control, from 1 to 4.
+
+    Raises:
+      ValueError, if the number is invalid.
+    """
+    # Used to check that the relay number is valid, before any operation
+    # is actually performed.
+    device.GetRelayBit(number)
     self.device = device
     self.number = number
 
+  def IsClosed(self):
+    """Returns true if this relay is closed, false otherwise."""
+    return self.device.IsRelayClosed(self.number)
+
   def Get(self):
-    """Get status of this relay."""
-    self.device.GetRelay(self.number)
+    """Deprecated, use IsClosed instead."""
+    return self.IsClosed()
 
   def OpenContact(self):
     """Disables this relay, by opening the contact."""
