@@ -390,11 +390,11 @@ class Relay(object):
 
   def IsClosed(self):
     """Returns true if this relay is closed, false otherwise."""
-    return self.device.IsRelayClosed(self.number)
+    return self.Get() == True
 
   def Get(self):
     """Deprecated, use IsClosed instead."""
-    return self.IsClosed()
+    return self.device.IsRelayClosed(self.number)
 
   def OpenContact(self):
     """Disables this relay, by opening the contact."""
