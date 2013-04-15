@@ -191,6 +191,9 @@ class Device(object):
   # Command to read digital in status
   DIGITAL_IN_COMMAND = 0x20
   
+  # Command to get relay state
+  RELAY_READ_COMMAND = 0x40
+  
   # Command to change the address of modio
   CHANGE_ADDRESS_COMMAND = 0xF0
 
@@ -220,6 +223,35 @@ class Device(object):
     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
     self.communicator.address = new_address
      
+  def GetRelayOuts(self):
+    """Reads the values of relay in register."""
+    buffer = self.communicator.ReadBlock(self.RELAY_READ_COMMAND, 2)
+    data = [0x00]*2
+    for i in range(len(buffer)):
+      data[i] = buffer[i]      
+    self.relay_outs = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]
+  
+  def GetRelayOut(self,relay_out):
+    """Return value for relay 
+
+    Args:
+      relay_out: int, 0 - 3, the relay value to get for. Note that olimex
+        mod-io has exactly 4 relays
+   
+    Raises:
+      ValueError if an invalid relay number is passed.
+   
+    Returns:
+      False if the relay is low, True if high.
+    """
+    self.GetRelayOuts()
+    try:      
+      relay_out = self.relay_outs[relay_out-1]
+    except IndexError:
+      raise ValueError(
+        "Invalid digital in: must be between 0 and %d", len(self.relay_out) - 1)
+    return relay_out != 0
+    
   def GetDigitalIns(self):
     """Reads the values of digital in register."""
     buffer = self.communicator.ReadBlock(self.DIGITAL_IN_COMMAND, 2)
@@ -263,6 +295,19 @@ class Device(object):
 
   def GetRelayBit(self, relay):
     """Returns the bit that represents the status of the specified relay.
+<<<<<<< HEAD
+
+    With mod-io, the status of all the relays on the board is represented
+    as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
+    representis a closed relay. This value can be written to mod-io to close
+    / open all relays.
+
+    This method takes a relay number (eg, 1 - 4) and returns an integer
+    with the bit controlling this relay set to 1. As this method raises
+    ValueError if an invalid relay is provided, it can be used to validate
+    relay numbers.
+
+=======
 
     With mod-io, the status of all the relays on the board is represented
     as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
