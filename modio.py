@@ -295,19 +295,6 @@ class Device(object):
 
   def GetRelayBit(self, relay):
     """Returns the bit that represents the status of the specified relay.
-<<<<<<< HEAD
-
-    With mod-io, the status of all the relays on the board is represented
-    as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
-    representis a closed relay. This value can be written to mod-io to close
-    / open all relays.
-
-    This method takes a relay number (eg, 1 - 4) and returns an integer
-    with the bit controlling this relay set to 1. As this method raises
-    ValueError if an invalid relay is provided, it can be used to validate
-    relay numbers.
-
-=======
 
     With mod-io, the status of all the relays on the board is represented
     as a bit mask. Each bit to 0 represents an open relay, and each bit to 1
