@@ -186,7 +186,7 @@ class Device(object):
   DEFAULT_BUS = 1
 
   # Command to use to pilot relays.
-  RELAY_COMMAND = 0x10
+  RELAY_WRITE_COMMAND = 0x10
   
   # Command to read digital in status
   DIGITAL_IN_COMMAND = 0x20
@@ -289,7 +289,7 @@ class Device(object):
     """Set and return the relay status."""
     if value < 0 or value > 0xf:
       raise ValueError("Invalid relay value: can be between 0 and 0xF")
-    self.communicator.Write(self.RELAY_COMMAND, value)
+    self.communicator.Write(self.RELAY_WRITE_COMMAND, value)
     self.relay_status = value
     return self.relay_status
 
