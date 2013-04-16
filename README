@@ -108,6 +108,21 @@ DESCRIPTION
         relay.OpenContact()
     
     
+    MODIFIED FIRMWARE
+    =================
+    
+    If you have a mod-io and would like some extra features from your
+    board you can install a modified firmware available here:
+    
+      https://github.com/ccontavalli/olimex-modio-firmware
+    
+    This firmware allows you to:
+    
+      1. Read which extra features the firmware supports :)
+      2. Read the state of relays directly from the board.
+         (thanks to Imran for the patches, https://github.com/emnuu)
+    
+    
     PROBLEMS, ISSUES, or QUESTIONS?
     ===============================
     
@@ -197,7 +212,7 @@ CLASSES
      |        ValueError, if the relay number is invalid.
      |  
      |  GetRelays(self)
-     |      Returns the relay status as a bitmask.
+     |      Returns the cached status of the relays as a bitmask.
      |  
      |  IsRelayClosed(self, relay)
      |      Returns the status of a relay.
@@ -221,6 +236,22 @@ CLASSES
      |      
      |      Raises:
      |        ValueError if an invalid relay number is passed.
+     |  
+     |  ReadRelay(self, relay_out)
+     |      Return value for relay 
+     |      
+     |      Args:
+     |        relay_out: int, 1 - 4, the relay value to get for.
+     |          Note that olimex mod-io has exactly 4 relays
+     |      
+     |      Raises:
+     |        ValueError if an invalid relay number is passed.
+     |      
+     |      Returns:
+     |        False if the relay is low, True if high.
+     |  
+     |  ReadRelays(self)
+     |      Reads the status of the relays from the board, and returns it.
      |  
      |  SetRelays(self, value)
      |      Set and return the relay status.
@@ -253,7 +284,9 @@ CLASSES
      |  
      |  DIGITAL_IN_COMMAND = 32
      |  
-     |  RELAY_COMMAND = 16
+     |  RELAY_READ_COMMAND = 64
+     |  
+     |  RELAY_WRITE_COMMAND = 16
     
     class DeviceNotFoundException(exceptions.IOError)
      |  Raised if we cannot communicate with the device.
@@ -509,11 +542,19 @@ CLASSES
      |  
      |  Methods defined here:
      |  
-     |  ReadBlock(self, key, value)
+     |  ReadBlock(self, key, length)
      |      Reads a block from olimex mod-io.
+     |      
+     |      Args:
+     |        key: integer, an address where to read data from.
+     |        length: integer, how much data to read.
      |  
      |  Write(self, key, value)
      |      Sends a request to olimex mod-io.
+     |      
+     |      Args:
+     |        key: integer, an address where to write data.
+     |        value: string, the data to write.
      |  
      |  __init__(self, bus, address)
      |      Instantiates a SmbBus.
