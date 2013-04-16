@@ -101,6 +101,21 @@ HOW TO USE THE LIBRARY
     relay.OpenContact()
 
 
+MODIFIED FIRMWARE
+=================
+
+If you have a mod-io and would like some extra features from your
+board you can install a modified firmware available here:
+
+  https://github.com/ccontavalli/olimex-modio-firmware
+
+This firmware allows you to:
+
+  1. Read which extra features the firmware supports :)
+  2. Read the state of relays directly from the board.
+     (thanks to Imran for the patches, https://github.com/emnuu)
+
+
 PROBLEMS, ISSUES, or QUESTIONS?
 ===============================
 
@@ -147,18 +162,29 @@ class SmbBus(object):
           "the proper modules")
 
   def Write(self, key, value):
-    """Sends a request to olimex mod-io."""
+    """Sends a request to olimex mod-io.
+
+    Args:
+      key: integer, an address where to write data.
+      value: string, the data to write.
+    """
     try:
       self.smb.write_byte_data(self.address, key, value)
     except IOError:
       raise DeviceNotFoundException("Could not communicate with device")
 
-  def ReadBlock(self, key, value):
-    """Reads a block from olimex mod-io."""
+  def ReadBlock(self, key, length):
+    """Reads a block from olimex mod-io.
+
+    Args:
+      key: integer, an address where to read data from.
+      length: integer, how much data to read.
+    """
     try:
-      return self.smb.read_i2c_block_data(self.address, key, value)
+      return self.smb.read_i2c_block_data(self.address, key, length)
     except IOError:
       raise DeviceNotFoundException("Could not communicate with device")
+
 
 class FakeBus(object):
   """Emulates a SmbBus for testing purposes.
@@ -223,20 +249,17 @@ class Device(object):
     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
     self.communicator.address = new_address
      
-  def GetRelayOuts(self):
-    """Reads the values of relay in register."""
-    buffer = self.communicator.ReadBlock(self.RELAY_READ_COMMAND, 2)
-    data = [0x00]*2
-    for i in range(len(buffer)):
-      data[i] = buffer[i]      
-    self.relay_outs = [data[0]&1, data[0]&2, data[0]&4, data[0]&8]
+  def ReadRelays(self):
+    """Reads the status of the relays from the board, and returns it."""
+    data = self.communicator.ReadBlock(self.RELAY_READ_COMMAND, 2)
+    return data & 0xf
   
-  def GetRelayOut(self,relay_out):
+  def ReadRelay(self, relay_out):
     """Return value for relay 
 
     Args:
-      relay_out: int, 0 - 3, the relay value to get for. Note that olimex
-        mod-io has exactly 4 relays
+      relay_out: int, 1 - 4, the relay value to get for.
+        Note that olimex mod-io has exactly 4 relays
    
     Raises:
       ValueError if an invalid relay number is passed.
@@ -244,13 +267,11 @@ class Device(object):
     Returns:
       False if the relay is low, True if high.
     """
-    self.GetRelayOuts()
-    try:      
-      relay_out = self.relay_outs[relay_out-1]
-    except IndexError:
-      raise ValueError(
-        "Invalid digital in: must be between 0 and %d", len(self.relay_out) - 1)
-    return relay_out != 0
+    bit = self.GetRelayBit(relay_out)
+    status = self.ReadRelays()
+    if status & bit:
+      return True
+    return False
     
   def GetDigitalIns(self):
     """Reads the values of digital in register."""
@@ -282,7 +303,7 @@ class Device(object):
     return digital_in != 0
 
   def GetRelays(self):
-    """Returns the relay status as a bitmask."""
+    """Returns the cached status of the relays as a bitmask."""
     return self.relay_status
 
   def SetRelays(self, value):
@@ -335,7 +356,7 @@ class Device(object):
       False if the releay is opened, True if closed.
     """
     relay = self.GetRelayBit(relay)
-    if self.relay_status & relay:
+    if self.GetRelays() & relay:
       return True
     return False
 
@@ -363,6 +384,7 @@ class Device(object):
     """
     self.SetRelays(self.GetRelays() & ((~self.GetRelayBit(relay)) & 0xf))
 
+
 class DigitalIn(object):
   """Represents a single digital in, convenience wrapper around the device class."""
   def __init__(self, device, number):
@@ -372,6 +394,7 @@ class DigitalIn(object):
   def Get(self):
     """Get status of this digital in."""
     return self.device.GetDigitalIn(self.number)
+
 
 class Relay(object):
   """Represents a single relay, convenience wrapper around the device class."""
