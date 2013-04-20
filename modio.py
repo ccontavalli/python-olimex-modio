@@ -135,6 +135,7 @@ except ImportError:
   raise ImportError("You must install the python 'smbus' extension.\n"
                     "Use 'sudo apt-get install i2c-tools python-smbus', "
                     "or 'pip install smbus'")
+import sys
 import logging
 
 class DeviceNotFoundException(IOError):
@@ -434,3 +435,60 @@ class Relay(object):
   def CloseContact(self):
     """Enables this relay, by closing the contact."""
     self.device.CloseContactRelay(self.number)
+
+
+def PrintHelp(message):
+  print message
+  print "THIS IS THE HELP"
+
+def HandleRelay(args):
+  if len(args) != 2:
+    PrintHelp("Wrong number of arguments: ... relay on|off NUMBER.");
+    return 10
+
+  status = args[0]
+  if status not in ["on", "off"]:
+    PrintHelp("Can't parse '%s': ... relay on|off NUMBER." % status);
+    return 11
+
+  relay = args[1]
+  board = Device()
+  try:
+    if status == "on":
+      board.CloseContactRelay(int(relay))
+    else:
+      board.OpenContactRelay(int(relay))
+  except ValueError:
+    PrintHelp("Invalid relay '%s': ... relay on|off NUMBER." % relay);
+    return 12
+  return 0
+  
+def HandleReadAin(args):
+  if len(args) != 1:
+    PrintHelp("Wrong number of arguments: ... read-ain NUMBER.");
+    return 20
+
+  ain = args[0]
+  board = Device()
+  try:
+    print board.ReadAin(int(ain))
+  except ValueError:
+    PrintHelp("Invalid ain '%s': ... read-ain NUMBER." % ain);
+    return 21 
+  return 0
+
+def main(args):
+  if len(args) < 2:
+    PrintHelp("Need to specify a command.");
+    return 1
+  command = args[1]
+  if command == "relay":
+    return HandleRelay(args[2:])
+  if command == "read-ain":
+    return HandleReadAin(args[2:])
+
+  PrintHelp("Unknown command: %s" % command)
+  return 2
+
+if __name__ == "__main__":
+  sys.exit(main(sys.argv))
