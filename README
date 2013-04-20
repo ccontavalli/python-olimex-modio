@@ -187,6 +187,19 @@ CLASSES
      |  GetDigitalIns(self)
      |      Reads the values of digital in register.
      |  
+     |  GetReadAinCommand(self, ain)
+     |      Returns the command to use to read an analogic input.
+     |      
+     |      Args:
+     |        ain: integer, the number of the analogic input to read.
+     |            On mod-io, analg inputs are numbered 1 - 4.
+     |      
+     |      Raises:
+     |        ValueError: if an invalid analog input is passed.
+     |      
+     |      Returns:
+     |        integer, the command to use to read the analog input.
+     |  
      |  GetRelayBit(self, relay)
      |      Returns the bit that represents the status of the specified relay.
      |      
@@ -237,6 +250,20 @@ CLASSES
      |      Raises:
      |        ValueError if an invalid relay number is passed.
      |  
+     |  ReadAin(self, ain)
+     |      Reads an analog input, and returns its value.
+     |      
+     |      Args:
+     |        ain: integer, the number of the analogic input to read.
+     |            On mod-io, analg inputs are numbered 1 - 4.
+     |      
+     |      Raises:
+     |        ValueError: if an invalid analog input is passed.
+     |      
+     |      Returns:
+     |        integer, the value of the analog input. Note that mod-io
+     |        analog inputs have a precision of 10 bits.
+     |  
      |  ReadRelay(self, relay_out)
      |      Return value for relay 
      |      
@@ -275,6 +302,8 @@ CLASSES
      |  
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
+     |  
+     |  AIN_READ_COMMAND = 48
      |  
      |  CHANGE_ADDRESS_COMMAND = 240
      |  
@@ -572,5 +601,14 @@ CLASSES
      |  
      |  __weakref__
      |      list of weak references to the object (if defined)
+
+FUNCTIONS
+    HandleReadAin(args)
+    
+    HandleRelay(args)
+    
+    PrintHelp(message)
+    
+    main(args)
 
 
