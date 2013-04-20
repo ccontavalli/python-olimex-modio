@@ -129,7 +129,12 @@ Newer versions of the code are available here:
   https://github.com/ccontavalli/python-olimex-modio
 """
 
-import smbus
+try:
+  import smbus
+except ImportError:
+  raise ImportError("You must install the python 'smbus' extension.\n"
+                    "Use 'sudo apt-get install i2c-tools python-smbus', "
+                    "or 'pip install smbus'")
 import logging
 
 class DeviceNotFoundException(IOError):
