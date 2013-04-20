@@ -229,6 +229,10 @@ class Device(object):
   # Command to change the address of modio
   CHANGE_ADDRESS_COMMAND = 0xF0
 
+  # Base command to read analog inputs
+  AIN_READ_COMMAND = 0x30
+
+
   def __init__(self, address=DEFAULT_ADDRESS, bus=DEFAULT_BUS, communicator=SmbBus):
     """Constructs a device object.
 
@@ -254,6 +258,44 @@ class Device(object):
       raise ValueError("Invalid address: can be between 0 and 0xFF")
     self.communicator.Write(CHANGE_ADDRESS_COMMAND, new_address)
     self.communicator.address = new_address
+
+  def GetReadAinCommand(self, ain):
+    """Returns the command to use to read an analogic input.
+
+    Args:
+      ain: integer, the number of the analogic input to read.
+          On mod-io, analg inputs are numbered 1 - 4.
+
+    Raises:
+      ValueError: if an invalid analog input is passed.
+
+    Returns:
+      integer, the command to use to read the analog input.
+    """
+    ain = int(ain)
+    if ain < 1 or ain > 4:
+      raise ValueError("analog input must be between 1 and 4")
+    # There is a different command for each relay.
+    return self.AIN_READ_COMMAND + ain - 1
+
+  def ReadAin(self, ain):
+    """Reads an analog input, and returns its value.
+
+    Args:
+      ain: integer, the number of the analogic input to read.
+          On mod-io, analg inputs are numbered 1 - 4.
+
+    Raises:
+      ValueError: if an invalid analog input is passed.
+
+    Returns:
+      integer, the value of the analog input. Note that mod-io
+      analog inputs have a precision of 10 bits.
+    """
+    command = self.GetReadAinCommand(ain)
+    self.communicator.Write(command, 0x1)
+    data = self.communicator.ReadBlock(command, 2)
+    return data[0] + data[1] << 8
      
   def ReadRelays(self):
     """Reads the status of the relays from the board, and returns it."""
