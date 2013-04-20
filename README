@@ -610,5 +610,24 @@ FUNCTIONS
     PrintHelp(message)
     
     main(args)
+        Provides access to mod-io from the command line.
+        
+        Commands:
+          relay    - to change the state of a relay.
+            close NUMBER - closes the specified relay.
+            open NUMBER - opens the specified relay.
+        
+          read-ain - to read an analog input.
+            read-ain NUMBER - reads the value from the specified ain.
+        
+        Examples:
+          # Close the contact on relay 1.
+          modio.py relay close 1
+          # Open the contact on relay 1.
+          modio.py relay open 1
+        
+          # Read the first analog input.
+          modio.py read-ain 1
+          57
 
 

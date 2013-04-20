@@ -480,28 +480,28 @@ class Relay(object):
 
 
 def PrintHelp(message):
-  print message
-  print "THIS IS THE HELP"
+  print >>sys.stderr, message
+  print >>sys.stderr, main.__doc__
 
 def HandleRelay(args):
   if len(args) != 2:
-    PrintHelp("Wrong number of arguments: ... relay on|off NUMBER.");
+    PrintHelp("Wrong number of arguments: ... relay open|close NUMBER.");
     return 10
 
   status = args[0]
-  if status not in ["on", "off"]:
-    PrintHelp("Can't parse '%s': ... relay on|off NUMBER." % status);
+  if status not in ["open", "close"]:
+    PrintHelp("Can't parse '%s': ... relay open|close NUMBER." % status);
     return 11
 
   relay = args[1]
   board = Device()
   try:
-    if status == "on":
+    if status == "open":
       board.CloseContactRelay(int(relay))
     else:
       board.OpenContactRelay(int(relay))
   except ValueError:
-    PrintHelp("Invalid relay '%s': ... relay on|off NUMBER." % relay);
+    PrintHelp("Invalid relay '%s': ... relay open|close NUMBER." % relay);
     return 12
   return 0
   
@@ -520,6 +520,26 @@ def HandleReadAin(args):
   return 0
 
 def main(args):
+  """Provides access to mod-io from the command line.
+  
+  Commands:
+    relay    - to change the state of a relay.
+      close NUMBER - closes the specified relay.
+      open NUMBER - opens the specified relay.
+
+    read-ain - to read an analog input.
+      read-ain NUMBER - reads the value from the specified ain.
+
+  Examples:
+    # Close the contact on relay 1.
+    ./modio.py relay close 1
+    # Open the contact on relay 1.
+    ./modio.py relay open 1
+
+    # Read the first analog input.
+    ./modio.py read-ain 1
+    57
+  """
   if len(args) < 2:
     PrintHelp("Need to specify a command.");
     return 1
