@@ -294,8 +294,8 @@ class Device(object):
     """
     command = self.GetReadAinCommand(ain)
     self.communicator.Write(command, 0x1)
-    data = self.communicator.ReadBlock(command, 2)
-    return data[0] + (data[1] << 8)
+    data = self.communicator.ReadBlock(command,3)
+    return data[1] + (data[2] << 8)
      
   def ReadRelays(self):
     """Reads the status of the relays from the board, and returns it."""
