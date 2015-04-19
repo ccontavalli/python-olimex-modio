@@ -496,7 +496,7 @@ def HandleRelay(args):
   relay = args[1]
   board = Device()
   try:
-    if status == "open":
+    if status == "close":
       board.CloseContactRelay(int(relay))
     else:
       board.OpenContactRelay(int(relay))
